@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>吃飯選擇困難症救星</title>
+  <meta name="description" content="把想吃的都丟進清單，拉一下拉霸機，讓老天決定今天吃什麼。" />
+  <style>
+    :root {
+      --bg: #07060f;
+      --bg-soft: #100c24;
+      --surface: rgba(255, 255, 255, .05);
+      --surface-2: rgba(255, 255, 255, .1);
+      --border: rgba(255, 255, 255, .13);
+      --border-strong: rgba(255, 255, 255, .26);
+      --text: #f5f3ff;
+      --text-dim: #9d99c2;
+      --ink: #0a0716;
+      --neon-pink: #ff2e88;
+      --neon-cyan: #25e3ff;
+      --neon-yellow: #ffd24a;
+      --neon-purple: #9a6bff;
+      --danger: #ff5d6c;
+      --radius: 18px;
+      --radius-sm: 12px;
+      --radius-pill: 999px;
+      --shadow-card: 0 24px 60px -30px rgba(0, 0, 0, .9);
+      --glow-pink: 0 0 22px rgba(255, 46, 136, .55);
+      --glow-cyan: 0 0 22px rgba(37, 227, 255, .5);
+      --glow-yellow: 0 0 20px rgba(255, 210, 74, .5);
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      --row-h: clamp(56px, 8vh, 86px);
+      --ease-out: cubic-bezier(.16, .68, .2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      font-family: var(--font);
+      color: var(--text);
+      background-color: var(--bg);
+      min-height: 100dvh;
+      padding: clamp(14px, 2.2vw, 32px);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(14px, 2vw, 24px);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background:
+        radial-gradient(880px 600px at 10% 4%, rgba(37, 227, 255, .16), transparent 62%),
+        radial-gradient(820px 640px at 92% 94%, rgba(255, 46, 136, .2), transparent 62%),
+        radial-gradient(700px 700px at 58% 46%, rgba(154, 107, 255, .14), transparent 66%),
+        linear-gradient(180deg, var(--bg-soft), var(--bg) 62%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
+      background-size: 64px 64px;
+      -webkit-mask-image: radial-gradient(80% 70% at 50% 38%, #000 28%, transparent 100%);
+      mask-image: radial-gradient(80% 70% at 50% 38%, #000 28%, transparent 100%);
+    }
+
+    .sprite {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+    }
+
+    .icon {
+      width: 17px;
+      height: 17px;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ---------- header ---------- */
+    .app-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(22px, 3.3vw, 38px);
+      line-height: 1.12;
+      letter-spacing: .03em;
+      font-weight: 800;
+      background: linear-gradient(94deg, var(--neon-cyan), var(--text) 46%, var(--neon-pink));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 20px rgba(255, 46, 136, .32));
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--text-dim);
+      font-size: clamp(12px, 1.4vw, 14px);
+      letter-spacing: .02em;
+    }
+
+    /* ---------- buttons ---------- */
+    .btn {
+      font: inherit;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 10px 16px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform .15s var(--ease-out), background .2s, border-color .2s, box-shadow .2s, filter .2s;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, .16);
+      border-color: var(--border-strong);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(1px) scale(.99);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--neon-cyan);
+      outline-offset: 2px;
+    }
+
+    .btn:disabled {
+      opacity: .42;
+      cursor: not-allowed;
+    }
+
+    .btn-ghost {
+      background: transparent;
+    }
+
+    .btn-danger {
+      color: var(--danger);
+    }
+
+    .btn-primary {
+      color: var(--ink);
+      background: linear-gradient(100deg, var(--neon-cyan), var(--neon-pink));
+      border-color: transparent;
+      font-weight: 700;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(100deg, var(--neon-cyan), var(--neon-pink));
+      filter: brightness(1.08);
+    }
+
+    .icon-btn {
+      width: 44px;
+      padding: 0;
+      border-radius: var(--radius-pill);
+    }
+
+    .icon-btn[aria-pressed="true"] {
+      color: var(--neon-yellow);
+      border-color: rgba(255, 210, 74, .5);
+      box-shadow: var(--glow-yellow);
+    }
+
+    /* ---------- layout ---------- */
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+      gap: clamp(16px, 2.2vw, 26px);
+      align-items: start;
+      flex: 1;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .018));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-card);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+
+    .panel {
+      padding: clamp(14px, 2vw, 22px);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(12px, 1.6vw, 16px);
+      min-width: 0;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: clamp(13px, 1.5vw, 15px);
+      font-weight: 700;
+      letter-spacing: .18em;
+      color: var(--text-dim);
+    }
+
+    .count {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 4px 11px;
+      white-space: nowrap;
+    }
+
+    .count.warn {
+      color: var(--neon-yellow);
+      border-color: rgba(255, 210, 74, .45);
+      box-shadow: var(--glow-yellow);
+    }
+
+    /* ---------- slot machine ---------- */
+    .machine {
+      position: relative;
+      padding: clamp(13px, 1.8vw, 20px);
+      border-radius: calc(var(--radius) + 6px);
+      background: linear-gradient(180deg, #171233, #0b0819);
+      border: 1px solid var(--border-strong);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 30px 70px -34px rgba(0, 0, 0, .95);
+      overflow: hidden;
+      transition: border-color .3s, box-shadow .3s;
+    }
+
+    .machine.won {
+      border-color: rgba(255, 210, 74, .55);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 0 62px -12px rgba(255, 210, 74, .5);
+    }
+
+    .marquee {
+      display: flex;
+      justify-content: center;
+      gap: 9px;
+      margin-bottom: clamp(10px, 1.4vw, 14px);
+    }
+
+    .marquee span {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--neon-pink);
+      box-shadow: var(--glow-pink);
+    }
+
+    .marquee span:nth-child(2n) {
+      background: var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .marquee span:nth-child(3n) {
+      background: var(--neon-yellow);
+      box-shadow: var(--glow-yellow);
+    }
+
+    .machine.spinning .marquee span {
+      animation: lamp .42s infinite alternate;
+    }
+
+    .machine.spinning .marquee span:nth-child(2n) {
+      animation-delay: .12s;
+    }
+
+    .machine.spinning .marquee span:nth-child(3n) {
+      animation-delay: .24s;
+    }
+
+    @keyframes lamp {
+      from {
+        opacity: .28;
+        transform: scale(.82);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1.18);
+      }
+    }
+
+    .reels {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(7px, 1.1vw, 13px);
+    }
+
+    .reel {
+      position: relative;
+      height: calc(var(--row-h) * 3);
+      overflow: hidden;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(180deg, rgba(0, 0, 0, .58), rgba(0, 0, 0, .26));
+      border: 1px solid var(--border);
+    }
+
+    .reel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(7, 6, 15, .88), transparent 28%, transparent 72%, rgba(7, 6, 15, .88));
+    }
+
+    .strip {
+      will-change: transform;
+    }
+
+    .row {
+      height: var(--row-h);
+      display: block;
+      line-height: var(--row-h);
+      padding: 0 8px;
+      text-align: center;
+      font-size: clamp(14px, 1.85vw, 21px);
+      font-weight: 600;
+      letter-spacing: .01em;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .row.win-row {
+      color: var(--neon-yellow);
+      font-weight: 800;
+      text-shadow: 0 0 20px rgba(255, 210, 74, .55);
+    }
+
+    .payline {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: var(--row-h);
+      transform: translateY(-50%);
+      border-top: 1px solid rgba(37, 227, 255, .5);
+      border-bottom: 1px solid rgba(255, 46, 136, .45);
+      box-shadow: inset 0 0 26px rgba(37, 227, 255, .16);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .confetti {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .confetti i {
+      position: absolute;
+      top: -16px;
+      width: 7px;
+      height: 14px;
+      border-radius: 2px;
+      animation: fall linear forwards;
+    }
+
+    @keyframes fall {
+      from {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+
+      to {
+        transform: translateY(var(--fall, 460px)) rotate(680deg);
+        opacity: 0;
+      }
+    }
+
+    .btn-pull {
+      width: 100%;
+      margin-top: clamp(12px, 1.6vw, 18px);
+      font-size: clamp(16px, 1.9vw, 20px);
+      font-weight: 800;
+      letter-spacing: .08em;
+      padding: 15px 24px;
+      color: var(--ink);
+      background: linear-gradient(100deg, var(--neon-cyan), var(--neon-pink));
+      border-color: transparent;
+      box-shadow: 0 0 32px -8px rgba(255, 46, 136, .8), 0 14px 32px -16px rgba(0, 0, 0, .95);
+    }
+
+    .btn-pull:hover:not(:disabled) {
+      background: linear-gradient(100deg, var(--neon-cyan), var(--neon-pink));
+      filter: brightness(1.08);
+    }
+
+    .btn-pull:disabled {
+      background: var(--surface-2);
+      color: var(--text-dim);
+      box-shadow: none;
+    }
+
+    /* ---------- result ---------- */
+    .result {
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius);
+      padding: clamp(12px, 1.6vw, 18px);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: rgba(255, 255, 255, .03);
+      animation: pop .4s var(--ease-out);
+    }
+
+    .result[hidden] {
+      display: none;
+    }
+
+    @keyframes pop {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .result-top {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .result-name {
+      font-size: clamp(20px, 2.9vw, 30px);
+      font-weight: 800;
+      color: var(--neon-yellow);
+      text-shadow: 0 0 24px rgba(255, 210, 74, .45);
+      word-break: break-word;
+    }
+
+    .quip {
+      margin: 0;
+      font-size: clamp(12px, 1.45vw, 14px);
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .result-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .hint {
+      margin: 0;
+      min-height: 18px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-dim);
+    }
+
+    .hint.warn {
+      color: var(--neon-yellow);
+    }
+
+    /* ---------- form ---------- */
+    input,
+    select {
+      font: inherit;
+      font-size: 14px;
+      color: var(--text);
+      background-color: rgba(255, 255, 255, .06);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 12px;
+      min-height: 44px;
+      width: 100%;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    input::placeholder {
+      color: var(--text-dim);
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 0 3px rgba(37, 227, 255, .18);
+    }
+
+    select {
+      -webkit-appearance: none;
+      appearance: none;
+      padding-right: 34px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239d99c2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 16px 16px;
+    }
+
+    option {
+      background-color: #151130;
+      color: var(--text);
+    }
+
+    .add-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .add-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, .86fr) auto;
+      gap: 8px;
+    }
+
+    /* ---------- filters ---------- */
+    .filter-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .filter-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      color: var(--text-dim);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .chip {
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dim);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 6px 13px;
+      min-height: 34px;
+      cursor: pointer;
+      transition: color .18s, background .18s, border-color .18s, box-shadow .18s;
+    }
+
+    .chip:hover {
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+
+    .chip:focus-visible {
+      outline: 2px solid var(--neon-cyan);
+      outline-offset: 2px;
+    }
+
+    .chip[aria-pressed="true"] {
+      color: var(--ink);
+      background: linear-gradient(100deg, var(--neon-cyan), var(--neon-pink));
+      border-color: transparent;
+      box-shadow: 0 0 20px -6px rgba(255, 46, 136, .85);
+    }
+
+    /* ---------- list ---------- */
+    .items,
+    .recent {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .items {
+      max-height: min(40vh, 360px);
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .items::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .items::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, .16);
+      border-radius: 8px;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .item.blocked {
+      opacity: .5;
+    }
+
+    .item.blocked .item-name {
+      text-decoration: line-through;
+    }
+
+    .item-name {
+      flex: 1;
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .item .count {
+      border: none;
+      padding: 0;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      padding: 3px 9px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-strong);
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    .badge.price {
+      color: var(--neon-cyan);
+      border-color: rgba(37, 227, 255, .4);
+    }
+
+    .mini {
+      width: 34px;
+      height: 34px;
+      min-height: 34px;
+      padding: 0;
+      border-radius: 10px;
+      background: transparent;
+    }
+
+    .mini.on {
+      color: var(--neon-yellow);
+      border-color: rgba(255, 210, 74, .5);
+      background: rgba(255, 210, 74, .1);
+    }
+
+    .mini:hover {
+      background: rgba(255, 255, 255, .12);
+    }
+
+    .empty {
+      color: var(--text-dim);
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: center;
+      padding: 16px 8px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+    }
+
+    .list-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .list-actions .btn {
+      font-size: 13px;
+      min-height: 40px;
+      padding: 8px 14px;
+    }
+
+    .recent-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border-top: 1px solid var(--border);
+      padding-top: clamp(10px, 1.4vw, 14px);
+    }
+
+    .recent li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .recent .rname {
+      color: var(--text);
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ---------- toast ---------- */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      z-index: 50;
+      transform: translate(-50%, 18px);
+      opacity: 0;
+      pointer-events: none;
+      background: #151130;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-pill);
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: var(--shadow-card);
+      transition: opacity .25s, transform .25s;
+      max-width: calc(100vw - 32px);
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    /* ---------- responsive ---------- */
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .items {
+        max-height: none;
+      }
+
+      .add-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      .add-row .btn {
+        grid-column: 1 / -1;
+      }
+
+      .result-actions .btn {
+        flex: 1 1 auto;
+      }
+
+      .mini {
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+      }
+
+      .item {
+        flex-wrap: wrap;
+        row-gap: 2px;
+      }
+
+      .item-name {
+        flex: 1 1 100%;
+        font-size: 15px;
+      }
+
+      .item .mini:first-of-type {
+        margin-left: auto;
+      }
+
+      .chip {
+        min-height: 44px;
+        padding: 10px 15px;
+      }
+
+      .list-actions .btn {
+        min-height: 44px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      .machine.spinning .marquee span,
+      .confetti i,
+      .result {
+        animation: none;
+      }
+
+      .confetti {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-volume" viewBox="0 0 24 24">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    </symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <line x1="22" x2="16" y1="9" y2="15" />
+      <line x1="16" x2="22" y1="9" y2="15" />
+    </symbol>
+    <symbol id="i-play" viewBox="0 0 24 24">
+      <polygon points="6 3 20 12 6 21 6 3" />
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path d="M5 12h14" />
+      <path d="M12 5v14" />
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24">
+      <path d="M3 6h18" />
+      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+      <line x1="10" x2="10" y1="11" y2="17" />
+      <line x1="14" x2="14" y1="11" y2="17" />
+    </symbol>
+    <symbol id="i-ban" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" />
+      <path d="m4.9 4.9 14.2 14.2" />
+    </symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24">
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+      <path d="M3 21v-5h5" />
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <path d="M20 6 9 17l-5-5" />
+    </symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24">
+      <rect width="18" height="11" x="3" y="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+    </symbol>
+  </svg>
+
+  <header class="app-head">
+    <div class="brand">
+      <h1>吃飯選擇困難症救星</h1>
+      <p>把想吃的都丟進來，拉一下，讓老天決定。</p>
+    </div>
+    <button id="mute" class="btn btn-ghost icon-btn" type="button" aria-pressed="false" aria-label="音效開關">
+      <svg class="icon" aria-hidden="true">
+        <use href="#i-volume"></use>
+      </svg>
+    </button>
+  </header>
+
+  <main class="layout">
+    <section class="card panel">
+      <div class="panel-head">
+        <h2>拉霸機</h2>
+        <span class="count" id="pool-count">候選 0 道</span>
+      </div>
+
+      <div class="machine" id="machine">
+        <div class="marquee" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="reels" id="reels" aria-hidden="true">
+          <div class="reel">
+            <div class="strip"></div>
+          </div>
+          <div class="reel">
+            <div class="strip"></div>
+          </div>
+          <div class="reel">
+            <div class="strip"></div>
+          </div>
+          <div class="payline"></div>
+        </div>
+        <div class="confetti" id="confetti" aria-hidden="true"></div>
+      </div>
+
+      <button id="pull" class="btn btn-pull" type="button">
+        <svg class="icon" aria-hidden="true">
+          <use href="#i-play"></use>
+        </svg>
+        <span id="pull-label">拉一下</span>
+      </button>
+
+      <div class="result" id="result" hidden aria-live="polite">
+        <div class="result-top">
+          <span class="result-name" id="result-name"></span>
+          <span class="badge" id="result-tag" hidden></span>
+          <span class="badge price" id="result-price" hidden></span>
+        </div>
+        <p class="quip" id="quip"></p>
+        <div class="result-actions">
+          <button id="eat" class="btn btn-primary" type="button">
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-check"></use>
+            </svg>
+            <span id="eat-label">吃這個！</span>
+          </button>
+          <button id="again" class="btn" type="button">
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-refresh"></use>
+            </svg>
+            再抽一次
+          </button>
+          <button id="block" class="btn btn-danger" type="button">
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-ban"></use>
+            </svg>
+            今天不想吃
+          </button>
+        </div>
+      </div>
+
+      <p class="hint" id="hint" aria-live="polite"></p>
+    </section>
+
+    <aside class="card panel">
+      <div class="panel-head">
+        <h2>我的清單</h2>
+        <span class="count" id="list-count">0 道</span>
+      </div>
+
+      <form class="add-form" id="add-form">
+        <input id="name-input" type="text" maxlength="40" autocomplete="off" placeholder="想吃什麼？例如：牛肉麵"
+          aria-label="食物名稱" />
+        <div class="add-row">
+          <select id="tag-select" aria-label="標籤">
+            <option value="">標籤（可留空）</option>
+          </select>
+          <select id="price-select" aria-label="價位">
+            <option value="">價位（可留空）</option>
+          </select>
+          <button class="btn btn-primary" type="submit">
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-plus"></use>
+            </svg>
+            新增
+          </button>
+        </div>
+      </form>
+
+      <div class="filter-block">
+        <span class="filter-label">標籤篩選</span>
+        <div class="chips" id="tag-chips"></div>
+        <span class="filter-label">價位篩選</span>
+        <div class="chips" id="price-chips"></div>
+      </div>
+
+      <ul class="items" id="item-list"></ul>
+
+      <div class="list-actions">
+        <button id="unblock-all" class="btn btn-ghost" type="button">
+          <svg class="icon" aria-hidden="true">
+            <use href="#i-unlock"></use>
+          </svg>
+          全部解除封鎖
+        </button>
+        <button id="clear-all" class="btn btn-ghost btn-danger" type="button">
+          <svg class="icon" aria-hidden="true">
+            <use href="#i-trash"></use>
+          </svg>
+          <span id="clear-label">清空清單</span>
+        </button>
+      </div>
+
+      <div class="recent-block">
+        <span class="filter-label">最近吃過</span>
+        <ul class="recent" id="recent-list"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var STORE_KEY = "mealPicker.v1";
+      var TAGS = ["中式", "西式", "日式", "速食", "飲料", "甜點"];
+      var PRICES = ["$", "$$", "$$$"];
+      var TAG_POOL = ["全部"].concat(TAGS);
+      var PRICE_POOL = ["全部"].concat(PRICES);
+      var MAX_RECENT = 20;
+      var SPECIFIC_HINTS = ["換你決定了", "不要再想了", "這是命運", "就這家"];
+
+      var SEED = [
+        { name: "滷肉飯", tag: "中式", price: "$" },
+        { name: "牛肉麵", tag: "中式", price: "$$" },
+        { name: "水餃", tag: "中式", price: "$" },
+        { name: "火鍋", tag: "中式", price: "$$$" },
+        { name: "便當", tag: "中式", price: "$" },
+        { name: "蚵仔煎", tag: "中式", price: "$" },
+        { name: "拉麵", tag: "日式", price: "$$" },
+        { name: "壽司", tag: "日式", price: "$$$" },
+        { name: "咖哩飯", tag: "日式", price: "$$" },
+        { name: "義大利麵", tag: "西式", price: "$$" },
+        { name: "披薩", tag: "西式", price: "$$" },
+        { name: "沙拉", tag: "西式", price: "$" },
+        { name: "雞排", tag: "速食", price: "$" },
+        { name: "麥當勞", tag: "速食", price: "$$" },
+        { name: "漢堡", tag: "速食", price: "$$" },
+        { name: "珍珠奶茶", tag: "飲料", price: "$" },
+        { name: "豆花", tag: "甜點", price: "$" }
+      ];
+
+      /* ---------- helpers ---------- */
+      var $ = function (id) { return document.getElementById(id); };
+
+      function pad(n) { return String(n).padStart(2, "0"); }
+
+      function today() {
+        var d = new Date();
+        return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+      }
+
+      function uid() {
+        if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+        return "id-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      }
+
+      function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+      function prefersReduced() {
+        return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+      }
+
+      /* ---------- sound ---------- */
+      var Sound = {
+        ctx: null,
+        muted: false,
+        unlock: function () {
+          if (this.muted) return;
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          if (!this.ctx) {
+            try { this.ctx = new AC(); } catch (e) { this.ctx = null; return; }
+          }
+          if (this.ctx.state === "suspended" && typeof this.ctx.resume === "function") this.ctx.resume();
+        },
+        tone: function (freq, dur, type, gain, slideTo, delay) {
+          if (this.muted || !this.ctx) return;
+          var ctx = this.ctx;
+          var t0 = ctx.currentTime + (delay || 0);
+          var osc = ctx.createOscillator();
+          var g = ctx.createGain();
+          osc.type = type || "square";
+          osc.frequency.setValueAtTime(freq, t0);
+          if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+          g.gain.setValueAtTime(0.0001, t0);
+          g.gain.exponentialRampToValueAtTime(gain || 0.06, t0 + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+          osc.connect(g);
+          g.connect(ctx.destination);
+          osc.start(t0);
+          osc.stop(t0 + dur + 0.03);
+        },
+        spin: function () {
+          if (this.muted) return;
+          for (var i = 0; i < 12; i++) this.tone(170 + i * 36, 0.08, "triangle", 0.03, null, i * 0.05);
+        },
+        ding: function (i) {
+          if (this.muted) return;
+          var f = [740, 932, 1175][i] || 880;
+          this.tone(f, 0.2, "sine", 0.07);
+          this.tone(f * 2, 0.12, "sine", 0.02, null, 0.01);
+        },
+        win: function () {
+          if (this.muted) return;
+          var self = this;
+          [523, 659, 784, 1047].forEach(function (f, i) {
+            self.tone(f, 0.34, "triangle", 0.065, null, i * 0.09);
+          });
+        }
+      };
+
+      /* ---------- state ---------- */
+      var state;
+
+      function blankState() {
+        return {
+          items: [],
+          recent: [],
+          prefs: { muted: false, filterTag: "全部", filterPrice: "全部" }
+        };
+      }
+
+      function seedState() {
+        var s = blankState();
+        s.items = SEED.map(function (it) {
+          return {
+            id: uid(),
+            name: it.name,
+            tag: it.tag,
+            price: it.price,
+            blocked: false,
+            blockedOn: "",
+            eatCount: 0,
+            lastEatenAt: ""
+          };
+        });
+        return s;
+      }
+
+      function normalizeRun(raw) {
+        var s = blankState();
+        if (!raw || typeof raw !== "object") return s;
+        var t = today();
+
+        if (Array.isArray(raw.items)) {
+          raw.items.forEach(function (it) {
+            if (!it || typeof it.name !== "string") return;
+            var name = it.name.trim();
+            if (!name) return;
+            var stillBlocked = it.blocked === true && it.blockedOn === t;
+            s.items.push({
+              id: (typeof it.id === "string" && it.id) ? it.id : uid(),
+              name: name.slice(0, 40),
+              tag: TAGS.indexOf(it.tag) >= 0 ? it.tag : "",
+              price: PRICES.indexOf(it.price) >= 0 ? it.price : "",
+              blocked: stillBlocked,
+              blockedOn: stillBlocked ? t : "",
+              eatCount: (typeof it.eatCount === "number" && it.eatCount > 0) ? Math.floor(it.eatCount) : 0,
+              lastEatenAt: typeof it.lastEatenAt === "string" ? it.lastEatenAt : ""
+            });
+          });
+        }
+
+        if (Array.isArray(raw.recent)) {
+          s.recent = raw.recent
+            .filter(function (r) { return r && typeof r.name === "string" && r.name.trim(); })
+            .slice(0, MAX_RECENT)
+            .map(function (r) {
+              return { name: r.name.trim().slice(0, 40), at: typeof r.at === "string" ? r.at : "" };
+            });
+        }
+
+        var p = raw.prefs && typeof raw.prefs === "object" ? raw.prefs : {};
+        s.prefs.muted = p.muted === true;
+        s.prefs.filterTag = TAG_POOL.indexOf(p.filterTag) >= 0 ? p.filterTag : "全部";
+        s.prefs.filterPrice = PRICE_POOL.indexOf(p.filterPrice) >= 0 ? p.filterPrice : "全部";
+
+        return s;
+      }
+
+      function load() {
+        var raw = null;
+        try { raw = window.localStorage.getItem(STORE_KEY); } catch (e) { raw = null; }
+        if (raw === null) {
+          state = seedState();
+          save();
+          return;
+        }
+        try {
+          state = normalizeRun(JSON.parse(raw));
+        } catch (e) {
+          state = seedState();
+          save();
+        }
+      }
+
+      function save() {
+        try {
+          window.localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        } catch (e) {
+          toast("這個瀏覽器不允許儲存，變更可能不會保留");
+        }
+      }
+
+      /* ---------- queries ---------- */
+      function candidates() {
+        return state.items.filter(function (it) {
+          if (it.blocked) return false;
+          if (state.prefs.filterTag !== "全部" && it.tag !== state.prefs.filterTag) return false;
+          if (state.prefs.filterPrice !== "全部" && it.price !== state.prefs.filterPrice) return false;
+          return true;
+        });
+      }
+
+      function findById(id) {
+        for (var i = 0; i < state.items.length; i++) if (state.items[i].id === id) return state.items[i];
+        return null;
+      }
+
+      function findByName(name) {
+        for (var i = 0; i < state.items.length; i++) if (state.items[i].name === name) return state.items[i];
+        return null;
+      }
+
+      /* ---------- elements ---------- */
+      var machineEl = $("machine");
+      var reelsEl = $("reels");
+      var confettiEl = $("confetti");
+      var pullBtn = $("pull");
+      var pullLabel = $("pull-label");
+      var poolCountEl = $("pool-count");
+      var listCountEl = $("list-count");
+      var hintEl = $("hint");
+      var resultEl = $("result");
+      var resultNameEl = $("result-name");
+      var resultTagEl = $("result-tag");
+      var resultPriceEl = $("result-price");
+      var quipEl = $("quip");
+      var eatBtn = $("eat");
+      var eatLabel = $("eat-label");
+      var againBtn = $("again");
+      var blockBtn = $("block");
+      var addForm = $("add-form");
+      var nameInput = $("name-input");
+      var tagSelect = $("tag-select");
+      var priceSelect = $("price-select");
+      var tagChipsEl = $("tag-chips");
+      var priceChipsEl = $("price-chips");
+      var itemListEl = $("item-list");
+      var recentListEl = $("recent-list");
+      var unblockAllBtn = $("unblock-all");
+      var clearAllBtn = $("clear-all");
+      var clearLabel = $("clear-label");
+      var muteBtn = $("mute");
+      var toastEl = $("toast");
+
+      /* ---------- toast ---------- */
+      var toastTimer = null;
+
+      function toast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 2200);
+      }
+
+      /* ---------- svg icon helper ---------- */
+      function icon(id) {
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "icon");
+        svg.setAttribute("aria-hidden", "true");
+        var use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+        use.setAttribute("href", "#" + id);
+        svg.appendChild(use);
+        return svg;
+      }
+
+      /* ---------- rendering ---------- */
+      function renderSelects() {
+        TAGS.forEach(function (tag) {
+          var o = document.createElement("option");
+          o.value = tag;
+          o.textContent = tag;
+          tagSelect.appendChild(o);
+        });
+        PRICES.forEach(function (p) {
+          var o = document.createElement("option");
+          o.value = p;
+          o.textContent = p;
+          priceSelect.appendChild(o);
+        });
+      }
+
+      function makeChip(label, active, onClick) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "chip";
+        b.textContent = label;
+        b.setAttribute("aria-pressed", active ? "true" : "false");
+        b.addEventListener("click", onClick);
+        return b;
+      }
+
+      function renderChips() {
+        tagChipsEl.innerHTML = "";
+        TAG_POOL.forEach(function (tag) {
+          tagChipsEl.appendChild(makeChip(tag, state.prefs.filterTag === tag, function () {
+            state.prefs.filterTag = tag;
+            save();
+            renderChips();
+            refreshCounts();
+          }));
+        });
+
+        priceChipsEl.innerHTML = "";
+        PRICE_POOL.forEach(function (p) {
+          priceChipsEl.appendChild(makeChip(p, state.prefs.filterPrice === p, function () {
+            state.prefs.filterPrice = p;
+            save();
+            renderChips();
+            refreshCounts();
+          }));
+        });
+      }
+
+      function miniButton(iconId, label, onClick) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "btn btn-ghost mini";
+        b.setAttribute("aria-label", label);
+        b.title = label;
+        b.appendChild(icon(iconId));
+        b.addEventListener("click", onClick);
+        return b;
+      }
+
+      function itemRow(it) {
+        var li = document.createElement("li");
+        li.className = "item" + (it.blocked ? " blocked" : "");
+
+        var name = document.createElement("span");
+        name.className = "item-name";
+        name.textContent = it.name;
+
+        li.appendChild(name);
+
+        if (it.tag) {
+          var tag = document.createElement("span");
+          tag.className = "badge";
+          tag.textContent = it.tag;
+          li.appendChild(tag);
+        }
+
+        if (it.price) {
+          var price = document.createElement("span");
+          price.className = "badge price";
+          price.textContent = it.price;
+          li.appendChild(price);
+        }
+
+        var count = document.createElement("span");
+        count.className = "count";
+        count.textContent = "吃過 " + it.eatCount;
+        li.appendChild(count);
+
+        var blockBtn = miniButton("i-ban", it.blocked ? "解除「今天不想吃」" : "今天不想吃", function () {
+          it.blocked = !it.blocked;
+          it.blockedOn = it.blocked ? today() : "";
+          save();
+          renderList();
+          refreshCounts();
+          toast(it.blocked ? "今天先不吃「" + it.name + "」" : "「" + it.name + "」回來了");
+        });
+        if (it.blocked) blockBtn.classList.add("on");
+
+        var delBtn = miniButton("i-trash", "刪除 " + it.name, function () {
+          state.items = state.items.filter(function (x) { return x.id !== it.id; });
+          save();
+          renderList();
+          refreshCounts();
+          toast("已刪除「" + it.name + "」");
+        });
+
+        li.appendChild(blockBtn);
+        li.appendChild(delBtn);
+        return li;
+      }
+
+      function renderList() {
+        itemListEl.innerHTML = "";
+        if (!state.items.length) {
+          var empty = document.createElement("li");
+          empty.className = "empty";
+          empty.textContent = "清單是空的。把想吃的丟進來，愈多愈好玩。";
+          itemListEl.appendChild(empty);
+        } else {
+          state.items.forEach(function (it) { itemListEl.appendChild(itemRow(it)); });
+        }
+        listCountEl.textContent = state.items.length + " 道";
+      }
+
+      function renderRecent() {
+        recentListEl.innerHTML = "";
+        if (!state.recent.length) {
+          var empty = document.createElement("li");
+          empty.textContent = "還沒有紀錄。";
+          recentListEl.appendChild(empty);
+          return;
+        }
+        state.recent.slice(0, 5).forEach(function (r) {
+          var li = document.createElement("li");
+          var nm = document.createElement("span");
+          nm.className = "rname";
+          nm.textContent = r.name;
+          var when = document.createElement("span");
+          when.textContent = r.at ? new Date(r.at).toLocaleString("zh-TW", {
+            month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit"
+          }) : "";
+          li.appendChild(nm);
+          li.appendChild(when);
+          recentListEl.appendChild(li);
+        });
+      }
+
+      function emptyPoolHint() {
+        if (!state.items.length) return "清單是空的，先加幾道想吃的吧。";
+        var allBlocked = state.items.every(function (it) { return it.blocked; });
+        if (allBlocked) return "全部都被你封鎖了，先解除幾個吧。";
+        return "這個篩選沒有符合的選項，換個標籤或價位試試。";
+      }
+
+      function refreshCounts() {
+        var pool = candidates();
+        poolCountEl.textContent = "候選 " + pool.length + " 道";
+        poolCountEl.classList.toggle("warn", pool.length === 0);
+        pullBtn.disabled = pool.length === 0;
+        if (pool.length === 0) {
+          hintEl.textContent = emptyPoolHint();
+          hintEl.classList.add("warn");
+          if (!spinning) renderIdle();
+        } else {
+          hintEl.textContent = "";
+          hintEl.classList.remove("warn");
+        }
+      }
+
+      /* ---------- slot machine ---------- */
+      var reels = Array.prototype.slice.call(reelsEl.querySelectorAll(".reel"));
+      var spinning = false;
+      var lastWinner = null;
+      var lastPlans = null;
+
+      function rowHeight(strip) {
+        var row = strip.firstElementChild;
+        if (!row) return 0;
+        return row.getBoundingClientRect().height || 0;
+      }
+
+      function buildStrip(plan) {
+        var strip = plan.reel.querySelector(".strip");
+        strip.style.transition = "none";
+        strip.style.transform = "translateY(0px)";
+        strip.innerHTML = "";
+        plan.names.forEach(function (nm, idx) {
+          var row = document.createElement("div");
+          row.className = "row" + (idx === plan.winnerIndex ? " win-row" : "");
+          row.textContent = nm;
+          strip.appendChild(row);
+        });
+        plan.rowH = rowHeight(strip);
+        plan.stripEl = strip;
+      }
+
+      function makeNames(pool, winner, lead) {
+        var names = [];
+        for (var i = 0; i < lead; i++) names.push(pick(pool).name);
+        names.push(winner.name);
+        names.push(pick(pool).name);
+        names.push(pick(pool).name);
+        return names;
+      }
+
+      function applyTransforms(plans, durations) {
+        plans.forEach(function (plan, i) {
+          var y = -(plan.winnerIndex - 1) * plan.rowH;
+          if (durations) {
+            plan.stripEl.style.transition = "transform " + durations[i] + "s var(--ease-out)";
+          } else {
+            plan.stripEl.style.transition = "none";
+          }
+          plan.stripEl.style.transform = "translateY(" + y + "px)";
+        });
+      }
+
+      function renderIdle() {
+        var pool = candidates();
+        reels.forEach(function (reel) {
+          var strip = reel.querySelector(".strip");
+          strip.style.transition = "none";
+          strip.style.transform = "translateY(0px)";
+          strip.innerHTML = "";
+          for (var i = 0; i < 3; i++) {
+            var row = document.createElement("div");
+            row.className = "row";
+            row.textContent = pool.length ? pick(pool).name : "？";
+            strip.appendChild(row);
+          }
+        });
+        lastPlans = null;
+      }
+
+      function draw() {
+        if (spinning) return;
+        var pool = candidates();
+        if (!pool.length) {
+          refreshCounts();
+          toast(emptyPoolHint());
+          return;
+        }
+
+        spinning = true;
+        Sound.unlock();
+        Sound.spin();
+
+        machineEl.classList.add("spinning");
+        machineEl.classList.remove("won");
+        resultEl.hidden = true;
+        confettiEl.innerHTML = "";
+        eatBtn.disabled = false;
+        eatLabel.textContent = "吃這個！";
+
+        var winner = pick(pool);
+        lastWinner = winner;
+
+        var reduced = prefersReduced();
+        var durations = reduced ? [0.2, 0.26, 0.32] : [1.6, 2.25, 2.95];
+        var leads = reduced ? [3, 4, 5] : [18, 24, 30];
+
+        var plans = reels.map(function (reel, i) {
+          return { reel: reel, names: makeNames(pool, winner, leads[i]), winnerIndex: leads[i] };
+        });
+        plans.forEach(buildStrip);
+        lastPlans = plans;
+
+        window.requestAnimationFrame(function () {
+          if (!spinning) return;
+          applyTransforms(plans, durations);
+        });
+
+        plans.forEach(function (plan, i) {
+          setTimeout(function () { Sound.ding(i); }, durations[i] * 1000 - 30);
+        });
+        setTimeout(finish, durations[durations.length - 1] * 1000 + 90);
+      }
+
+      function finish() {
+        spinning = false;
+        machineEl.classList.remove("spinning");
+        machineEl.classList.add("won");
+        Sound.win();
+        if (!prefersReduced()) confetti();
+        showResult(lastWinner);
+      }
+
+      function confetti() {
+        var colors = ["var(--neon-pink)", "var(--neon-cyan)", "var(--neon-yellow)", "var(--neon-purple)"];
+        var frag = document.createDocumentFragment();
+        for (var i = 0; i < 34; i++) {
+          var bit = document.createElement("i");
+          bit.style.left = Math.round(Math.random() * 100) + "%";
+          bit.style.background = colors[i % colors.length];
+          bit.style.animationDuration = (1.3 + Math.random() * 0.9).toFixed(2) + "s";
+          bit.style.animationDelay = (Math.random() * 0.3).toFixed(2) + "s";
+          bit.style.setProperty("--fall", Math.round(heights()) + "px");
+          frag.appendChild(bit);
+        }
+        confettiEl.appendChild(frag);
+        setTimeout(function () { confettiEl.innerHTML = ""; }, 2600);
+      }
+
+      function heights() {
+        var h = machineEl.getBoundingClientRect().height;
+        return h > 0 ? h + 20 : 420;
+      }
+
+      /* ---------- quips ---------- */
+      function quipFor(it) {
+        var run = 0;
+        for (var i = 0; i < state.recent.length; i++) {
+          if (state.recent[i].name === it.name) run++;
+          else break;
+        }
+        if (run >= 1) return "又是" + it.name + "，連續第 " + (run + 1) + " 次，這不是選擇困難，是選擇專一。";
+        if (it.eatCount >= 5) return "已經吃過 " + it.eatCount + " 次，老闆應該認識你了。";
+        if (it.lastEatenAt) {
+          var days = Math.floor((Date.now() - new Date(it.lastEatenAt).getTime()) / 86400000);
+          if (days === 0) return "今天才吃過，你是忘記還是太想念？";
+          if (days <= 2) return days + " 天前才吃過，看來感情很深。";
+        }
+
+        var h = new Date().getHours();
+        if (h >= 5 && h < 11) return "一早就在想" + it.name + "，很有企圖心。";
+        if (h >= 22 || h < 5) return "這個時間吃" + it.name + "，明天再後悔。";
+        if (it.tag === "飲料") return "飲料不算一餐喔，但我不會阻止你。";
+        if (it.tag === "甜點") return "甜點也是食物，這是物理事實。";
+
+        return "就決定是你了，" + it.name + "！";
+      }
+
+      function showResult(it) {
+        if (!it) return;
+        resultNameEl.textContent = it.name;
+        if (it.tag) {
+          resultTagEl.textContent = it.tag;
+          resultTagEl.hidden = false;
+        } else {
+          resultTagEl.hidden = true;
+        }
+        if (it.price) {
+          resultPriceEl.textContent = it.price;
+          resultPriceEl.hidden = false;
+        } else {
+          resultPriceEl.hidden = true;
+        }
+        quipEl.textContent = quipFor(it) + "（" + pick(SPECIFIC_HINTS) + "）";
+        resultEl.hidden = false;
+        eatBtn.disabled = false;
+        eatLabel.textContent = "吃這個！";
+      }
+
+      /* ---------- actions ---------- */
+      function addItem(name, tag, price) {
+        state.items.push({
+          id: uid(),
+          name: name,
+          tag: tag,
+          price: price,
+          blocked: false,
+          blockedOn: "",
+          eatCount: 0,
+          lastEatenAt: ""
+        });
+        save();
+        renderList();
+        refreshCounts();
+        toast("已加入「" + name + "」");
+      }
+
+      function eatIt() {
+        if (!lastWinner) return;
+        var it = findById(lastWinner.id) || findByName(lastWinner.name);
+        if (it) {
+          it.eatCount++;
+          it.lastEatenAt = new Date().toISOString();
+        }
+        state.recent.unshift({ name: lastWinner.name, at: new Date().toISOString() });
+        state.recent = state.recent.slice(0, MAX_RECENT);
+        save();
+        renderList();
+        renderRecent();
+        eatBtn.disabled = true;
+        eatLabel.textContent = "已記錄";
+        toast("已記錄「" + lastWinner.name + "」，去吃吧");
+      }
+
+      function blockWinner() {
+        if (!lastWinner) return;
+        var it = findById(lastWinner.id) || findByName(lastWinner.name);
+        if (it) {
+          it.blocked = true;
+          it.blockedOn = today();
+          save();
+          renderList();
+          refreshCounts();
+        }
+        var pool = candidates();
+        if (pool.length) {
+          toast("今天先不吃「" + lastWinner.name + "」，再抽一次");
+          spinning = false;
+          draw();
+        } else {
+          toast("今天的選項都用完了");
+        }
+      }
+
+      /* ---------- events ---------- */
+      addForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var name = nameInput.value.trim();
+        if (!name) {
+          nameInput.focus();
+          toast("先寫個名字吧");
+          return;
+        }
+        addItem(name.slice(0, 40), tagSelect.value, priceSelect.value);
+        nameInput.value = "";
+        tagSelect.value = "";
+        priceSelect.value = "";
+        nameInput.focus();
+      });
+
+      pullBtn.addEventListener("click", draw);
+      againBtn.addEventListener("click", draw);
+      eatBtn.addEventListener("click", eatIt);
+      blockBtn.addEventListener("click", blockWinner);
+
+      unblockAllBtn.addEventListener("click", function () {
+        var n = 0;
+        state.items.forEach(function (it) {
+          if (it.blocked) { it.blocked = false; it.blockedOn = ""; n++; }
+        });
+        save();
+        renderList();
+        refreshCounts();
+        toast(n ? "解除了 " + n + " 道" : "現在沒有被封鎖的選項");
+      });
+
+      var clearing = false;
+      var clearTimer = null;
+      clearAllBtn.addEventListener("click", function () {
+        if (!clearing) {
+          clearing = true;
+          clearLabel.textContent = "再按一次確定清空";
+          clearTimer = setTimeout(function () {
+            clearing = false;
+            clearLabel.textContent = "清空清單";
+          }, 3000);
+          return;
+        }
+        if (clearTimer) clearTimeout(clearTimer);
+        clearing = false;
+        clearLabel.textContent = "清空清單";
+        state.items = [];
+        save();
+        renderList();
+        refreshCounts();
+        toast("清單已清空");
+      });
+
+      function renderMuteState() {
+        muteBtn.setAttribute("aria-pressed", Sound.muted ? "true" : "false");
+        muteBtn.setAttribute("aria-label", Sound.muted ? "目前靜音，點擊開啟音效" : "音效開啟，點擊靜音");
+        muteBtn.innerHTML = "";
+        muteBtn.appendChild(icon(Sound.muted ? "i-mute" : "i-volume"));
+      }
+
+      muteBtn.addEventListener("click", function () {
+        Sound.muted = !Sound.muted;
+        state.prefs.muted = Sound.muted;
+        save();
+        renderMuteState();
+        if (!Sound.muted) {
+          Sound.unlock();
+          Sound.tone(880, 0.12, "sine", 0.05);
+        }
+      });
+
+      var resizeTimer = null;
+      window.addEventListener("resize", function () {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+          if (spinning || !lastPlans) return;
+          lastPlans.forEach(function (plan) {
+            if (!plan.stripEl) return;
+            plan.rowH = rowHeight(plan.stripEl);
+          });
+          applyTransforms(lastPlans, null);
+        }, 150);
+      });
+
+      /* ---------- init ---------- */
+      load();
+      Sound.muted = state.prefs.muted;
+      renderSelects();
+      renderMuteState();
+      renderChips();
+      renderList();
+      renderRecent();
+      refreshCounts();
+      renderIdle();
+    })();
+  </script>
+</body>
+
+</html>
